@@ -15,8 +15,26 @@ async function getChannelMessages(channel) {
         const messages = [];
 
         $('.tgme_widget_message').each((index, element) => {
-            const text = $(element).find('.tgme_widget_message_text').text().trim() || null;
             const date = $(element).find('.tgme_widget_message_date time').attr('datetime') || null;
+
+            let text = $(element).find('.tgme_widget_message_text').html().trim() || null;
+            const textStyles = []
+
+            if (text) {
+                if (text.includes('<b>')) textStyles.push('bold');
+                if (text.includes('<i>')) textStyles.push('italic');
+                if (text.includes('<s>')) textStyles.push('strikethrough');
+                if (text.includes('<code>')) textStyles.push('monospace');
+                if (text.includes('<blockquote>')) textStyles.push('quote');
+                if (text.includes('<a href="')) textStyles.push('link');
+                if (text.includes('<span class="tgme_widget_message_spoiler">')) textStyles.push('spoiler');
+                if (text.includes('<ul>')) textStyles.push('unorderedList');
+                if (text.includes('<ol>')) textStyles.push('orderedList');
+                if (text.match(/[\u{1F600}-\u{1F64F}]/gu)) textStyles.push('emoji');
+            }
+
+            // Strip HTML tags from text, but preserve basic formatting
+            text = text ? text.replace(/<\/?[^>]+(>|$)/g, "") : null;
 
             let image = null;
             const imageStyle = $(element).find('.tgme_widget_message_photo_wrap').attr('style');
@@ -34,13 +52,25 @@ async function getChannelMessages(channel) {
 
             const document = $(element).find('.tgme_widget_message_document_title').text().trim() || null;
 
-            if (text || image || video || document) {
+            let voice = null;
+            const voiceUrl = $(element).find('.tgme_widget_message_voice').attr('href');
+            if (voiceUrl) {
+                voice = voiceUrl;
+            }
+
+            // Generate the post URL
+            const postUrl = `https://t.me/${channel}/${index + 1}`;
+
+            if (text || image || video || document || voice) {
                 messages.push({
                     text,
                     date,
                     image,
                     video,
-                    document
+                    document,
+                    voice, 
+                    url: postUrl,  
+                    styles: textStyles 
                 });
             }
         });
