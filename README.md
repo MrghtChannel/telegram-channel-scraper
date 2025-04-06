@@ -40,33 +40,6 @@ Replace `<channel>` with the channel name. Examples:
 - `breakingmash`
 - `elonmusk`
 
-## 🧾 Example Response
-
-```json
-[
-  {
-    "text": "New project update!",
-    "date": "2025-04-05T12:34:00",
-    "image": "https://cdn4.telegram-cdn.org/file/example.jpg",
-    "video": null,
-    "document": null,
-    "voice": null,
-    "url": "https://t.me/channel_name/1",
-    "styles": ["bold"]
-  },
-  {
-    "text": "Watch our video 👇",
-    "date": "2025-04-05T12:35:00",
-    "image": null,
-    "video": "https://cdn4.telegram-cdn.org/file/video-thumb.jpg",
-    "document": null,
-    "voice": null,
-    "url": "https://t.me/channel_name/2",
-    "styles": ["emoji"]
-  }
-]
-```
-
 ## ⚠️ Limitations
 
 - ❗ Works **only with public** Telegram channels
