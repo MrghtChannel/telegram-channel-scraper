@@ -14,8 +14,10 @@ async function getChannelMessages(channel) {
         let messages = [];
 
         $('.tgme_widget_message').each((index, element) => {
+            const postId = $(element).attr('data-post')?.split('/')[1];
+            const postUrl = postId ? `https://t.me/${channel}/${postId}` : `https://t.me/${channel}/${index + 1}`;
             const date = $(element).find('.tgme_widget_message_date time').attr('datetime') || null;
-            
+
             let text = $(element).find('.tgme_widget_message_text').html();
             if (text) {
                 text = text.trim();
@@ -39,12 +41,16 @@ async function getChannelMessages(channel) {
 
             text = text ? text.replace(/<\/?[^>]+(>|$)/g, "") : null;
 
-            let image = null;
-            const imageStyle = $(element).find('.tgme_widget_message_photo_wrap').attr('style');
-            if (imageStyle) {
-                const match = imageStyle.match(/url\(['"]?(.*?)['"]?\)/);
-                if (match) image = match[1];
-            }
+            let images = [];
+            $(element).find('.tgme_widget_message_photo_wrap').each((i, imgElem) => {
+                const styleAttr = $(imgElem).attr('style');
+                if (styleAttr) {
+                    const match = styleAttr.match(/url\(['"]?(.*?)['"]?\)/);
+                    if (match && match[1]) {
+                        images.push(match[1]);
+                    }
+                }
+            });
 
             let video = null;
             const videoStyle = $(element).find('.tgme_widget_message_video_thumb').attr('style');
@@ -54,41 +60,30 @@ async function getChannelMessages(channel) {
             }
 
             const document = $(element).find('.tgme_widget_message_document_title').text().trim() || null;
+
             let voice = null;
             const voiceUrl = $(element).find('.tgme_widget_message_voice').attr('href');
             if (voiceUrl) {
                 voice = voiceUrl;
             }
 
-            let postUrl = '';
-            const postLink = $(element).find('a').attr('href');
-            if (postLink) {
-                const match = postLink.match(/\/(\d+)$/);
-                if (match && match[1]) {
-                    postUrl = `https://t.me/${channel}/${match[1]}`;
-                }
-            }
-
-            if (!postUrl) {
-                postUrl = `https://t.me/${channel}/${index + 1}`;
-            }
-
-            if (text || image || video || document || voice) {
+            if (text || images.length || video || document || voice) {
                 messages.push({
+                    url: postUrl,
                     text,
                     date,
-                    image,
+                    images,
                     video,
                     document,
-                    voice, 
-                    url: postUrl,  
-                    styles: textStyles 
+                    voice,
+                    styles: textStyles
                 });
             }
         });
 
         return messages;
     } catch (error) {
+        console.error('Ошибка при загрузке канала:', error.message);
         return [];
     }
 }
