@@ -5,21 +5,25 @@ const cheerio = require('cheerio');
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Function to get messages from the channel
 async function getChannelMessages(channel) {
     try {
         const url = `https://t.me/s/${channel}`;
         const response = await axios.get(url);
         const html = response.data;
         const $ = cheerio.load(html);
-        const messages = [];
+        let messages = [];
 
         $('.tgme_widget_message').each((index, element) => {
             const date = $(element).find('.tgme_widget_message_date time').attr('datetime') || null;
+            
+            let text = $(element).find('.tgme_widget_message_text').html();
+            if (text) {
+                text = text.trim();
+            } else {
+                text = null;
+            }
 
-            let text = $(element).find('.tgme_widget_message_text').html().trim() || null;
-            const textStyles = []
-
+            const textStyles = [];
             if (text) {
                 if (text.includes('<b>')) textStyles.push('bold');
                 if (text.includes('<i>')) textStyles.push('italic');
@@ -33,7 +37,6 @@ async function getChannelMessages(channel) {
                 if (text.match(/[\u{1F600}-\u{1F64F}]/gu)) textStyles.push('emoji');
             }
 
-            // Strip HTML tags from text, but preserve basic formatting
             text = text ? text.replace(/<\/?[^>]+(>|$)/g, "") : null;
 
             let image = null;
@@ -51,15 +54,24 @@ async function getChannelMessages(channel) {
             }
 
             const document = $(element).find('.tgme_widget_message_document_title').text().trim() || null;
-
             let voice = null;
             const voiceUrl = $(element).find('.tgme_widget_message_voice').attr('href');
             if (voiceUrl) {
                 voice = voiceUrl;
             }
 
-            // Generate the post URL
-            const postUrl = `https://t.me/${channel}/${index + 1}`;
+            let postUrl = '';
+            const postLink = $(element).find('a').attr('href');
+            if (postLink) {
+                const match = postLink.match(/\/(\d+)$/);
+                if (match && match[1]) {
+                    postUrl = `https://t.me/${channel}/${match[1]}`;
+                }
+            }
+
+            if (!postUrl) {
+                postUrl = `https://t.me/${channel}/${index + 1}`;
+            }
 
             if (text || image || video || document || voice) {
                 messages.push({
@@ -77,12 +89,10 @@ async function getChannelMessages(channel) {
 
         return messages;
     } catch (error) {
-        console.error('Error while fetching messages:', error.message);
         return [];
     }
 }
 
-// API endpoint to fetch messages from the channel
 app.get('/t.me/s/:channel/json', async (req, res) => {
     const channel = req.params.channel;
 
@@ -94,7 +104,6 @@ app.get('/t.me/s/:channel/json', async (req, res) => {
     res.json(messages);
 });
 
-// Start the server
 app.listen(port, () => {
     console.log(`✅ Server is running on http://localhost:${port}`);
 });
