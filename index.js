@@ -3,8 +3,9 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
+// Function to get messages from the channel
 async function getChannelMessages(channel) {
     try {
         const url = `https://t.me/s/${channel}`;
@@ -15,7 +16,6 @@ async function getChannelMessages(channel) {
 
         $('.tgme_widget_message').each((index, element) => {
             const text = $(element).find('.tgme_widget_message_text').text().trim() || null;
-
             const date = $(element).find('.tgme_widget_message_date time').attr('datetime') || null;
 
             let image = null;
@@ -52,6 +52,7 @@ async function getChannelMessages(channel) {
     }
 }
 
+// API endpoint to fetch messages from the channel
 app.get('/t.me/s/:channel/json', async (req, res) => {
     const channel = req.params.channel;
 
@@ -63,6 +64,7 @@ app.get('/t.me/s/:channel/json', async (req, res) => {
     res.json(messages);
 });
 
+// Start the server
 app.listen(port, () => {
     console.log(`✅ Server is running on http://localhost:${port}`);
 });
